@@ -13,7 +13,40 @@ import MapKit
 
 
 class SeenViewViewController: UIViewController, UITableViewDelegate,UITableViewDataSource, UISearchBarDelegate, MKMapViewDelegate, CLLocationManagerDelegate {
+    struct datatype : Identifiable {
+        
+        var id : String
+        var name : String
+        var image : String
+        var rating : String
+        var webUrl : String
+    }
 
+    struct TypeMain : Decodable {
+        
+        var nearby_restaurants : [Type1]
+    }
+
+    struct Type1 : Decodable{
+        
+        
+        var restaurant : Type2
+    }
+
+
+    struct Type2 : Decodable {
+        
+        var id : String
+        var name : String
+        var url : String
+        var thumb : String
+        var user_rating : Type3
+    }
+    struct Type3 : Decodable {
+        
+        var aggregate_rating : String
+    }
+    var datas = [datatype]()
     @IBOutlet weak var tableView: UITableView!
 
     var restaurantNameArray = [String]()
@@ -50,8 +83,62 @@ class SeenViewViewController: UIViewController, UITableViewDelegate,UITableViewD
            self.navigationController?.navigationBar.barStyle = .black
         
 
-        getDocumentNearBy(latitude: 21.288443, longitude: -157.834524, distance: 0.1)
+       // getDocumentNearBy(latitude: 21.288443, longitude: -157.834524, distance: 0.1)
+        zomatoApiSeen()
     }
+    func zomatoApiSeen() {
+        self.userImageArray.removeAll(keepingCapacity: false)
+        self.restaurantNameArray.removeAll(keepingCapacity: false)
+        let url1 = "https://developers.zomato.com/api/v2.1/geocode?lat=39.8991&lon=32.8605533"
+        let api = "19ab14dce433eabe16fbcc2661898e34"
+        
+        let url = URL(string: url1)
+        var request = URLRequest(url: url!)
+        
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue(api, forHTTPHeaderField: "user-key")
+        request.httpMethod = "GET"
+        
+        let sess = URLSession(configuration: .default)
+        sess.dataTask(with: request) { (data, _, _) in
+            
+            do{
+                
+                let fetch = try JSONDecoder().decode(Type.self, from: data!)
+                print(fetch)
+                
+                for i in fetch.nearby_restaurants{
+                    
+                    
+                    DispatchQueue.main.async {
+                        
+                        
+                        
+                        
+                        if let restaurantName = i.restaurant.name as? String{
+                            self.restaurantNameArray.append(restaurantName)
+                        }
+                        if i.restaurant.thumb == ""{
+                            self.userImageArray.append("https://firebasestorage.googleapis.com/v0/b/flashsalesgetit.appspot.com/o/media%2FC738A90B-A734-4FAC-A8A9-ADC898C46400.jpg?alt=media&token=83a3826d-72ef-41ba-bb9b-6171f94adb2d")
+                        }
+                        if let imageUrl = i.restaurant.thumb as? String{
+                            self.userImageArray.append(imageUrl)
+                        }
+                        
+                        self.datas.append(datatype(id: i.restaurant.id, name: i.restaurant.name, image: i.restaurant.thumb, rating: i.restaurant.user_rating.aggregate_rating, webUrl: i.restaurant.url))
+                        self.tableView.reloadData()
+
+                    }
+                    
+                }
+            }
+            catch{
+                
+                print(error.localizedDescription)
+            }
+        }.resume()
+    }
+    
     func getDocumentNearBy(latitude: Double, longitude: Double, distance: Double) {
 
         // ~1 mile of lat and lon in degrees
@@ -190,8 +277,8 @@ class SeenViewViewController: UIViewController, UITableViewDelegate,UITableViewD
         
         cell.userImageView.sd_setImage(with: URL(string: self.userImageArray[indexPath.row]))
         cell.restaurantNameLabel.text = restaurantNameArray[indexPath.row]
-        cell.flashSalesLabel.text = flashSalesArray[indexPath.row]
-        cell.timeLineLabel.text = timeLineArray[indexPath.row]
+//        cell.flashSalesLabel.text = flashSalesArray[indexPath.row]
+//        cell.timeLineLabel.text = timeLineArray[indexPath.row]
         
         return cell
     }

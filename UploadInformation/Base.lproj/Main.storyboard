@@ -376,6 +376,7 @@
         <image name="select" width="316" height="190"/>
     </resources>
     <inferredMetricsTieBreakers>
+        <segue reference="siD-5W-Nsk"/>
         <segue reference="0WK-NV-X3d"/>
     </inferredMetricsTieBreakers>
 </document>
